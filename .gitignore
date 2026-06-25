@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+venv/
+.venv/
+data/
+checkpoints/*.pth
+*.egg-info/
+.DS_Store
+.env
+runs/

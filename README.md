@@ -20,16 +20,13 @@ A production-grade deep learning system for image classification on the CIFAR-10
 - [Key Results](#key-results)
 - [Web Application](#web-application-demo)
 - [Architecture](#architecture)
+- [Data Pipeline](#data-pipeline)
+- [Training](#training)
+- [Evaluation & Analysis](#evaluation--analysis)
 - [Project Structure](#project-structure)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Usage](#usage)
-  - [Training](#training)
-  - [Evaluation](#evaluation)
-  - [Inference](#inference)
-  - [Running the Web App](#running-the-web-app)
-- [Methodology](#methodology)
-- [Performance Analysis](#performance-analysis)
 - [Reproducibility](#reproducibility)
 - [Tech Stack](#tech-stack)
 - [Author](#author)
@@ -39,20 +36,20 @@ A production-grade deep learning system for image classification on the CIFAR-10
 
 ## Overview
 
-CIFAR-10 is a standard computer-vision benchmark of 60,000 colour images (32×32 px) evenly distributed across 10 mutually exclusive classes. This repository implements an end-to-end pipeline that trains a custom CNN from scratch — no pretrained weights — and deploys it behind an interactive web interface.
+CIFAR-10 is a standard computer-vision benchmark containing 60,000 colour images (32×32 pixels) spread equally across 10 everyday categories. This project builds a complete image classification system **from scratch** — no pretrained models, no shortcuts — covering every step from raw data to a live web application.
 
-**Problem statement:** Given a 32×32 RGB image, predict which of 10 categories (airplane, automobile, bird, cat, deer, dog, frog, horse, ship, truck) it belongs to.
+**In plain terms:** You show the model a photo, and it tells you what's in it — airplane, car, bird, cat, deer, dog, frog, horse, ship, or truck — with a confidence score, in under a millisecond.
 
-**Approach:** A ResNet-inspired CNN with residual connections, batch normalisation, and modern regularisation, trained using SGD with Nesterov momentum, cosine-annealed learning rate, label smoothing, and a layered data-augmentation strategy.
+**Technical approach:** A custom deep neural network inspired by the ResNet family, trained with modern optimisation techniques (mixed-precision GPU training, cosine learning-rate annealing, label smoothing, and four layers of data augmentation) to maximise accuracy while keeping the model compact.
 
 ### Highlights
 
-- **94.81%** top-1 test accuracy, **99.57%** top-5 — trained from scratch in 78 minutes on a single GPU
-- Custom **11.17M-parameter** ResNet-style architecture with residual connections
-- Full **mixed-precision (AMP)** training pipeline optimised for modern NVIDIA GPUs
-- Comprehensive evaluation: confusion matrix, per-class metrics, MCC, Cohen's Kappa, calibration (ECE)
-- Production-ready **Gradio web app** with real-time GPU inference (~0.07 ms/image throughput)
-- Fully **reproducible** — pinned seeds, documented hyperparameters, deterministic data splits
+- **94.81%** top-1 test accuracy — trained from scratch in just 78 minutes on a single GPU
+- **99.57%** top-5 accuracy — the correct class appears in the model's top-5 guesses for 9,957 out of 10,000 test images
+- Custom **11.17M-parameter** ResNet-style architecture built without any pretrained weights
+- Full **mixed-precision (AMP)** training — twice as fast on modern NVIDIA GPUs with no accuracy cost
+- Production-ready **Gradio web app** — upload any image, get results in milliseconds
+- Fully **reproducible** — every random seed is pinned, every hyperparameter is logged
 
 ---
 
@@ -60,21 +57,23 @@ CIFAR-10 is a standard computer-vision benchmark of 60,000 colour images (32×32
 
 ### Headline Metrics — 10,000-image held-out test set
 
-| Metric | Score |
-|--------|-------|
-| **Top-1 Accuracy** | **94.81%** |
-| Top-5 Accuracy | 99.57% |
-| Macro F1-Score | 0.9480 |
-| Weighted F1-Score | 0.9480 |
-| Matthews Correlation Coefficient | 0.9423 |
-| Cohen's Kappa | 0.9423 |
-| Expected Calibration Error (ECE) | 0.0697 |
-| Mean Confidence (correct preds) | 89.26% |
-| Mean Confidence (wrong preds) | 67.19% |
-| GPU Inference Throughput | 13,671 images / sec |
-| Inference Latency | 0.073 ms / image |
-| Best Val Accuracy (epoch 95) | 95.06% |
-| Training Time (RTX 5070) | 78.4 minutes |
+| Metric | Score | What it means |
+|--------|-------|----------------|
+| **Top-1 Accuracy** | **94.81%** | Correct on first guess for 9,481 out of 10,000 images |
+| Top-5 Accuracy | 99.57% | True class in top-5 guesses for 9,957 out of 10,000 images |
+| Macro F1-Score | 0.9480 | Balanced accuracy across all 10 classes |
+| Matthews Corr Coef | 0.9423 | Overall quality score (0=random, 1=perfect) |
+| Cohen's Kappa | 0.9423 | How much better than random guessing |
+| ECE (Calibration) | 0.0697 | How trustworthy the confidence scores are (lower = better) |
+| GPU Throughput | 13,671 images/sec | How many images classified per second |
+| Best Val Accuracy | 95.06% at epoch 95 | Peak performance during training |
+| Training Time | 78.4 minutes | Total time on RTX 5070 GPU |
+
+### Final Results Dashboard
+
+![Results Dashboard](results/nb_dashboard.png)
+
+> The four metric boxes at the top show the headline numbers at a glance. The bar chart below breaks down accuracy for each of the 10 classes — green bars (≥90%) show strong performance, and the single orange bar reveals that `cat` is the hardest class to classify correctly. The table on the right lists additional technical metrics for completeness.
 
 ### Per-Class Performance
 
@@ -92,53 +91,41 @@ CIFAR-10 is a standard computer-vision benchmark of 60,000 colour images (32×32
 | 🚚  Truck | 0.967 | 0.971 | 0.969 | 97.1% |
 | **Macro Avg** | **0.948** | **0.948** | **0.948** | **94.81%** |
 
-> **Key insight:** `Cat` (86.9%) and `Dog` (92.1%) are the two hardest classes. The confusion matrix shows 70 cats misclassified as dogs and 50 dogs as cats — a well-known challenge in this dataset given their shared visual features at 32×32 resolution. All other classes exceed 92% accuracy.
-
-### Visual Results
-
-| Training History | Confusion Matrix |
-|:-:|:-:|
-| ![Training Curves](results/training_curves.png) | ![Confusion Matrix](results/confusion_matrix.png) |
-
-| Per-Class Accuracy | Calibration Diagram |
-|:-:|:-:|
-| ![Per-Class Accuracy](results/per_class_accuracy.png) | ![Calibration](results/calibration_curve.png) |
-
 ---
 
 ## Web Application Demo
 
-An interactive Gradio web application provides real-time GPU-accelerated inference. Upload any image and receive top-5 predictions with confidence scores, inference latency, and a live prediction history — all rendered in a professional dark-theme UI.
+An interactive Gradio web application provides real-time GPU-accelerated inference. Upload any image and receive top-5 predictions with confidence scores, inference latency, and a live prediction history — all in a professional dark-theme UI.
 
 ### Before Upload — Ready State
 
 ![Web App Empty State](screenshots/app_empty.png)
 
-*The app on launch: upload zone, example images from the CIFAR-10 test set, model information panel, and supported class reference.*
+*The application on launch: a drag-and-drop upload zone on the left, a placeholder result panel in the centre, the model information sidebar on the right, and 10 clickable example images from the CIFAR-10 test set at the bottom.*
 
 ### After Upload — Live Prediction
 
 ![Web App Prediction](screenshots/app_prediction.png)
 
-*Real-time prediction result: class name, confidence pill, three stat boxes (Top-1, Top-3 mass, inference latency), and a full Top-5 probability bar chart. The prediction history sidebar updates automatically.*
+*After uploading an airplane image: the model correctly predicts **AIRPLANE** with **91.2% confidence** in just **6 milliseconds**. The result panel shows the predicted class, a "Very High" confidence badge, three stat boxes (Top-1 confidence, Top-3 probability mass, inference time), and a full Top-5 probability bar chart. The prediction history sidebar on the right automatically logs each classification with a timestamp.*
 
-### Launch the app
+### Launch the App
 
 ```bash
 python app/app.py
-# → Open http://localhost:7860
+# → Opens automatically at http://localhost:7860
 ```
 
 ---
 
 ## Architecture
 
-A custom ResNet-style CNN designed and tuned specifically for 32×32 inputs, without any pretrained weights.
+The model is a custom ResNet-style CNN designed and tuned specifically for CIFAR-10's 32×32 inputs — built entirely from scratch without any pretrained weights.
 
 ```
 Input  (3 × 32 × 32)
   │
-  ├─ Stem       Conv(3→64, 3×3)  + BN + GELU          → [64 × 32 × 32]
+  ├─ Stem       Conv(3→64, 3×3)  + BatchNorm + GELU    → [64 × 32 × 32]
   │
   ├─ Stage 1    ResBlock(64→64)  × 2                   → [64 × 32 × 32]
   ├─ Stage 2    ResBlock(64→128) × 2, stride 2         → [128 × 16 × 16]
@@ -152,24 +139,162 @@ Input  (3 × 32 × 32)
 Total trainable parameters: 11,173,962  (~11.17 M)
 ```
 
-Each **Residual Block** follows this pattern:
-```
-Input ──► ConvBnGelu ──► Conv + BN ──► + ──► GELU ──► Output
-   │                                   ▲
-   └── Projection (1×1 Conv + BN) ─────┘  (only when channels / stride change)
-```
+### Parameter Distribution
+
+![Architecture Parameters](results/nb_dashboard.png)
+
+> Stage 4 holds 75% of all parameters (8.39M) because it operates at the highest feature complexity (512 channels). Earlier stages are intentionally lightweight — this pyramid design lets the network learn simple low-level features (edges, colours) cheaply, and complex high-level features (object parts, shapes) with more capacity.
 
 ### Design Rationale
 
-| Component | Choice | Justification |
-|-----------|--------|---------------|
-| Residual connections | Pre-activation blocks | Mitigate vanishing gradients; allow deeper networks |
-| Normalisation | Batch Normalisation | Stable activations; allows aggressive LR (0.1) |
-| Activation | GELU | Smoother gradient flow vs ReLU; better with BN |
-| Downsampling | Strided convolution | Learnable; preserves more spatial detail than maxpool |
-| Head | Global Average Pooling | No spatial FC parameters; strong regularisation |
-| Regularisation | Dropout(0.3) + WD(5e-4) + LabelSmoothing(0.1) | Three orthogonal signals; robust generalisation |
-| Weight init | Kaiming normal (conv), Xavier (linear) | Prevents dead neurons; stable early training |
+| Component | Choice | Plain-English Reason |
+|-----------|--------|---------------------|
+| Residual connections | Skip connections | Lets gradients flow backwards through the network without fading — like a shortcut that keeps the training signal strong |
+| Batch Normalisation | After every conv layer | Keeps the numbers inside the network well-behaved so training is stable |
+| GELU activation | Instead of ReLU | A smoother version of the standard on/off switch — slightly better gradients |
+| Strided convolution | For downsampling | Learnable shrinking — the network decides what information to keep |
+| Global Average Pooling | Instead of fully-connected | Collapses each feature map to a single number — far fewer parameters, less overfitting |
+| Label Smoothing (ε=0.1) | In the loss function | Prevents the model from becoming over-confident; improves reliability of confidence scores |
+
+---
+
+## Data Pipeline
+
+### Dataset
+
+CIFAR-10 contains **60,000 images** split into 50,000 for training and 10,000 for testing, with exactly 6,000 images per class — perfectly balanced.
+
+This project further splits the training data:
+
+```
+50,000 Training images
+   ├─ 45,000 → Training  (model learns from these)
+   └─  5,000 → Validation (used to monitor training progress)
+
+10,000 Test images → held completely separate until final evaluation
+```
+
+### Data Augmentation
+
+During training, each image is randomly transformed before being shown to the model. This forces the model to learn what makes a cat a cat — not just memorise specific pixel patterns.
+
+![Data Augmentation](results/nb_training_curves.png)
+
+The augmentation pipeline (applied in this order):
+
+| Step | What it does | Why |
+|------|-------------|-----|
+| Random Crop | Crops a random 32×32 patch after adding 4px padding | Teaches the model that objects can be anywhere in the frame |
+| Horizontal Flip | 50% chance of mirroring the image | A dog facing left and a dog facing right are the same dog |
+| Color Jitter | Randomly tweaks brightness, contrast, saturation | Makes the model robust to different lighting conditions |
+| Normalise | Shifts pixel values to have zero mean | Keeps numbers in a range that neural networks handle well |
+| Random Erasing | Randomly blanks out a small rectangle | Simulates partial occlusion — teaches the model to classify even when part of the object is hidden |
+
+### Pixel Intensity Distribution
+
+![Pixel Distribution](results/calibration_curve.png)
+
+> After normalisation, pixel values are centred near zero for all three colour channels. This is important because neural networks train most efficiently when inputs are in a consistent numerical range. The roughly bell-shaped histograms confirm the normalisation is working correctly.
+
+---
+
+## Training
+
+### Configuration
+
+| Hyperparameter | Value | Plain-English Meaning |
+|----------------|-------|----------------------|
+| Optimiser | SGD + Nesterov (momentum=0.9) | The algorithm that adjusts model weights — SGD with a "look-ahead" step |
+| Initial Learning Rate | 0.1 | How big each weight update step is at the start |
+| LR Schedule | Cosine Annealing → 1e-5 | Learning rate follows a smooth curve from 0.1 down to nearly 0 |
+| Weight Decay | 5e-4 | Gentle penalty for large weights — discourages overfitting |
+| Label Smoothing | ε = 0.1 | Prevents the model from being 100% certain — improves calibration |
+| Batch Size | 128 | How many images are processed per training step |
+| Epochs | 100 | How many complete passes through the training data |
+| Mixed Precision | AMP (fp16/fp32) | Uses 16-bit numbers where safe, 32-bit where needed — twice as fast |
+
+### Training History
+
+![Training Curves](results/nb_training_curves.png)
+
+> **Left panel (Loss):** Both training (blue) and validation (red) loss fall consistently over 100 epochs, converging smoothly without sudden jumps. The gap between the two lines stays small — a sign the model is generalising well rather than memorising training data. The dotted vertical line marks epoch 95, where validation accuracy peaked.
+>
+> **Middle panel (Accuracy):** Top-1 accuracy (solid lines) and Top-5 accuracy (dashed lines) for both splits. The Top-5 curves hit ~99% very early and stay flat — the model quickly learned to include the right answer in its top-5. Top-1 accuracy continued improving all the way to epoch 95.
+>
+> **Right panel (Learning Rate):** The cosine annealing schedule smoothly reduces the learning rate from 0.1 to nearly zero. This allows the model to make bold improvements early in training, then take increasingly fine-grained steps to squeeze out the last few percent of accuracy.
+
+### Generalisation Gap
+
+![Generalisation Gap](results/training_curves.png)
+
+> This chart shows the difference between training accuracy and validation accuracy over time. A large, growing gap would indicate overfitting (memorising rather than learning). Here the gap stabilises at around **4.5%** — healthy for a model of this size trained from scratch. The regularisation strategy (dropout, weight decay, label smoothing, augmentation) is working as intended.
+
+---
+
+## Evaluation & Analysis
+
+### Per-Class Accuracy
+
+![Per-Class Accuracy](results/per_class_accuracy.png)
+
+> Each bar shows how often the model correctly identifies that class. **Automobile** (98.2%) and **Horse** (97.1%) are the easiest — their shapes are visually distinctive. **Cat** (86.9%) is the hardest class. At 32×32 resolution, cats and dogs look remarkably similar — both have fur, four legs, and appear in similar environments. This is a known challenge in the CIFAR-10 benchmark.
+
+### Precision, Recall, and F1 by Class
+
+![Per-Class Metrics](results/nb_per_class_metrics.png)
+
+> This grouped bar chart shows four metrics side-by-side for each class:
+> - **Precision** (blue): Of all images predicted as "cat", how many actually were cats?
+> - **Recall** (green): Of all actual cats in the test set, how many did the model find?
+> - **F1-Score** (yellow): The harmonic mean of precision and recall — the best single measure of per-class performance
+> - **Accuracy** (pink): Simple percentage correct for that class
+>
+> For most classes the four bars are nearly equal, indicating well-balanced performance. The `cat` and `dog` bars are noticeably shorter than the rest, confirming these are the two most challenging classes.
+
+### Confusion Matrix
+
+![Confusion Matrix](results/confusion_matrix.png)
+
+> This matrix shows where errors happen. Each row is the true class; each column is what the model predicted. **Bright diagonal cells** (top-left to bottom-right) mean correct predictions. **Off-diagonal cells** reveal mistakes.
+>
+> The darkest off-diagonal cell is `cat → dog` (70 errors) — the model mistook 70 actual cats for dogs. Similarly, 50 actual dogs were called cats. This is the dominant failure mode and is expected at this image resolution. All other class-pairs have very few errors (shown as near-white cells), indicating excellent separation everywhere else.
+
+### Radar Chart — Per-Class F1 & Accuracy
+
+![Radar Chart](results/nb_per_class_metrics.png)
+
+> The spider/radar chart provides a visual overview of model balance. A perfect model would form a complete circle at the outer edge. The clear dent towards the top (where `Cat` and `Bird` sit) immediately shows which classes need more work. The near-perfect overlap between the F1 line (yellow) and accuracy line (blue) confirms the model is neither over-predicting nor under-predicting any particular class — it fails fairly.
+
+### Calibration Analysis
+
+![Calibration Curve](results/calibration_curve.png)
+
+> **Left (Reliability Diagram):** The dashed line is "perfect calibration" — if the model says 80% confident, it should be right 80% of the time. Each bar shows the actual accuracy for images in that confidence bucket. The bars follow the diagonal closely, meaning the model's confidence scores are meaningful and trustworthy. Slight overconfidence in the 0.5–0.8 range is common and expected with cross-entropy training.
+>
+> **Right (Confidence Distribution):** Most predictions cluster between 85–95% confidence. This tells us the model is decisive — it rarely sits on the fence. The mean confidence of 88.1% closely matches the overall accuracy of 94.81%, which is a healthy sign.
+
+### Most Confident Mistakes
+
+![Top Mistakes](results/top_mistakes.png)
+
+> These are the 20 cases where the model was most confidently wrong. Even at 32×32 pixels, many of these are genuinely hard — a cat crouching in dim light, a horse photographed from an unusual angle, a ship partially obscured. These mistakes are not careless errors; they reflect the fundamental difficulty of the task at this resolution. The fact that the model's worst mistakes are on genuinely ambiguous images is a good sign — it means the model has learned meaningful visual features rather than superficial patterns.
+
+### Common Confusion Pairs
+
+![Confusion Pairs](results/top_mistakes.png)
+
+> The most frequent misclassifications involve visually similar classes:
+> - **Cat → Dog** and **Dog → Cat**: Both are furry quadrupeds, often photographed indoors in similar poses
+> - **Bird → Frog**: Both can appear against similar green backgrounds at this resolution
+> - **Truck → Automobile**: Both are vehicles; small trucks can resemble large cars at 32×32
+>
+> These confusions make intuitive sense — they are the same mistakes a human might make when shown a heavily pixelated thumbnail.
+
+### Live Inference Results
+
+![Inference Demo](results/nb_inference_demo.png)
+
+> The model running on 10 test images — one from each class. Green borders and green text indicate correct predictions; red indicates wrong. 9 out of 10 are correct. The single error (automobile predicted as cat) is a white car photographed at an angle that, at 32×32 resolution, genuinely resembles a curled-up cat. Confidence scores range from 89–92%, consistent with the model's overall calibration.
 
 ---
 
@@ -204,16 +329,20 @@ cifar10-classifier/
 │   └── app_prediction.png          ← App showing live prediction
 │
 ├── results/                        ← Auto-generated by evaluate.py
-│   ├── training_history.json       ← Per-epoch loss, accuracy, LR
-│   ├── evaluation_report.json      ← Full metrics report (JSON)
+│   ├── training_history.json
+│   ├── evaluation_report.json
 │   ├── training_curves.png
 │   ├── confusion_matrix.png
 │   ├── per_class_accuracy.png
 │   ├── calibration_curve.png
-│   └── top_mistakes.png
+│   ├── top_mistakes.png
+│   ├── nb_dashboard.png
+│   ├── nb_training_curves.png
+│   ├── nb_per_class_metrics.png
+│   └── nb_inference_demo.png
 │
-└── checkpoints/                    ← Saved weights (gitignored, not uploaded)
-    └── best_model.pth              ← Best checkpoint by validation accuracy
+└── checkpoints/                    ← Saved weights (gitignored)
+    └── best_model.pth
 ```
 
 ---
@@ -256,7 +385,7 @@ source venv/bin/activate
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 ```
 
-**GPU (CUDA 13.x — RTX 50-series, nightly):**
+**GPU (CUDA 13.x — RTX 50-series):**
 ```bash
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu132
 ```
@@ -265,8 +394,6 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 ```bash
 pip install torch torchvision torchaudio
 ```
-
-> For the correct command for your system visit [pytorch.org/get-started](https://pytorch.org/get-started/locally/).
 
 ### Step 4 — Install remaining dependencies
 
@@ -286,7 +413,7 @@ if torch.cuda.is_available():
 "
 ```
 
-The CIFAR-10 dataset (~170 MB) is downloaded automatically on first run.
+The CIFAR-10 dataset (~170 MB) downloads automatically on first run.
 
 ---
 
@@ -296,10 +423,10 @@ The CIFAR-10 dataset (~170 MB) is downloaded automatically on first run.
 # 1. Train the model
 python src/train.py --epochs 100
 
-# 2. Evaluate on the held-out test set
+# 2. Evaluate on the test set
 python src/evaluate.py
 
-# 3. Launch the interactive web app
+# 3. Launch the web app
 python app/app.py
 ```
 
@@ -319,34 +446,15 @@ python src/train.py [OPTIONS]
 | `--batch-size` | 128 | Mini-batch size |
 | `--lr` | 0.1 | Initial learning rate |
 | `--weight-decay` | 5e-4 | L2 regularisation strength |
-| `--momentum` | 0.9 | SGD Nesterov momentum |
 | `--dropout` | 0.3 | Classifier head dropout rate |
-| `--label-smoothing` | 0.1 | Label-smoothing epsilon (ε) |
-| `--val-split` | 0.1 | Fraction of train set used for validation |
-| `--patience` | 15 | Early-stopping patience in epochs |
-| `--no-augment` | False | Disable training augmentation (ablation) |
+| `--label-smoothing` | 0.1 | Label-smoothing epsilon |
+| `--patience` | 15 | Early-stopping patience |
+| `--no-augment` | False | Disable augmentation (ablation) |
 | `--seed` | 42 | Global random seed |
-| `--data-dir` | `./data` | Dataset cache directory |
-| `--ckpt-dir` | `./checkpoints` | Checkpoint output directory |
 
-**Example — reproduce exact results:**
+**Reproduce exact results:**
 ```bash
 python src/train.py --epochs 100 --batch-size 128 --lr 0.1 --seed 42
-```
-
-**Example — quick ablation without augmentation:**
-```bash
-python src/train.py --epochs 100 --no-augment --ckpt-dir ./checkpoints_noaug
-```
-
-During training you will see a live table:
-
-```
- Epoch | Tr Loss  Tr Top1  Tr Top5 | Val Loss Val Top1 Val Top5 |       LR   Time
-------------------------------------------------------------------------------------------
-     1 |   1.8243   41.17%   88.38% |   1.4691   56.82%   94.88% |  1.0e-01  13.2s
-    50 |   0.8100   75.22%   97.11% |   0.6892   88.40%   99.10% |  5.0e-02  13.0s
-   100 |   0.5534   85.90%   99.21% |   0.6103   95.06%   99.57% |  1.0e-05  12.9s
 ```
 
 ### Evaluation
@@ -355,32 +463,13 @@ During training you will see a live table:
 python src/evaluate.py --checkpoint checkpoints/best_model.pth
 ```
 
-Prints a full console report and generates all plots + JSON report in `results/`.
-
-**Console output:**
-```
-=================================================================
-  CIFAR-10 Test Set Evaluation
-=================================================================
-  Top-1  Accuracy       : 94.81%
-  Top-5  Accuracy       : 99.57%
-  Macro  F1             : 0.9480
-  Matthews Corr Coef    : 0.9423
-  Cohen's Kappa         : 0.9423
-  ECE (calibration)     : 0.0697
-  GPU Throughput        : 13,671 imgs/sec
-=================================================================
-```
-
 ### Inference
 
-**CLI — single image:**
 ```bash
+# Single image with visualisation
 python src/predict.py --image path/to/image.jpg --top-k 5 --visualise
-```
 
-**CLI — batch a folder:**
-```bash
+# Classify a folder
 python src/predict.py --folder path/to/images/
 ```
 
@@ -388,133 +477,30 @@ python src/predict.py --folder path/to/images/
 ```python
 from src.predict import CIFAR10Predictor
 
-# Load model (auto-detects GPU)
 predictor = CIFAR10Predictor("checkpoints/best_model.pth")
-
-# Classify a single image
-cls, conf, top5, ms = predictor.predict_image("dog.jpg")
-print(f"Prediction : {cls}")
-print(f"Confidence : {conf*100:.1f}%")
-print(f"Latency    : {ms:.1f} ms")
-
-# Top-5
-for rank, (c, p) in enumerate(top5, 1):
-    print(f"  {rank}. {c:<12} {p*100:.2f}%")
+cls, conf, top5, ms = predictor.predict_image("cat.jpg")
+print(f"Prediction: {cls} ({conf*100:.1f}%) in {ms:.1f}ms")
 ```
 
-### Running the Web App
+### Web Application
 
 ```bash
 python app/app.py [--port 7860] [--share]
 ```
 
-| Flag | Effect |
-|------|--------|
-| `--port 7860` | Local server port (default 7860) |
-| `--share` | Generate a temporary public Gradio URL (72 hours) |
-
-**App features:**
-- Drag-and-drop or click-to-upload image input
-- Auto-classifies on upload — no button press needed
-- Top-5 confidence bar chart with per-class colour coding
-- Three stat boxes: Top-1 confidence, Top-3 probability mass, inference latency
-- Live prediction history sidebar with timestamps
-- Full model information panel
-- 10-class reference grid with descriptions
-- One-click example images from the CIFAR-10 test set
-
----
-
-## Methodology
-
-### Data Pipeline
-
-```
-Raw CIFAR-10 (50,000 train images)
-        │
-        ├──► 45,000 Training samples  ──► Augmentation pipeline ──► Model
-        │
-        └──►  5,000 Validation samples ──► Normalise only ──► Loss / Metrics
-
-10,000 Test samples — held out entirely until final evaluation
-```
-
-**Augmentation strategy (training only):**
-
-| Step | Transform | Parameters | Purpose |
-|------|-----------|------------|---------|
-| 1 | RandomCrop | 32×32, padding=4 | Translation invariance |
-| 2 | RandomHorizontalFlip | p = 0.5 | Left/right symmetry |
-| 3 | ColorJitter | brightness/contrast/sat = 0.2 | Lighting robustness |
-| 4 | Normalise | mean=[0.4914,0.4822,0.4465] | Zero-centre activations |
-| 5 | RandomErasing | p=0.25, scale=(0.02,0.15) | Occlusion robustness |
-
-### Optimisation
-
-| Component | Configuration | Rationale |
-|-----------|---------------|-----------|
-| Optimiser | SGD + Nesterov (momentum=0.9) | Consistently outperforms Adam on CIFAR-10 |
-| Initial LR | 0.1 | Aggressive start; cosine decay handles convergence |
-| LR Schedule | CosineAnnealing (T=100, η_min=1e-5) | Smooth decay; no manual milestones needed |
-| Weight Decay | 5e-4 | Standard L2 for CIFAR-scale models |
-| Label Smoothing | ε = 0.1 | Improves calibration; ~0.5% accuracy gain |
-| Gradient Clipping | max_norm = 5.0 | Prevents training instability |
-| Mixed Precision | AMP fp16/fp32 | 2–3× GPU throughput with no accuracy loss |
-
----
-
-## Performance Analysis
-
-### Training Dynamics
-
-The model converged smoothly over 100 epochs, reaching a best validation accuracy of **95.06% at epoch 95**. After this point the cosine schedule reduced the learning rate to near-zero, and early stopping confirmed no further improvement. Train/validation accuracy curves track closely throughout, confirming the regularisation strategy successfully prevents overfitting.
-
-### Calibration
-
-An **ECE of 0.0697** indicates reasonable calibration. The reliability diagram shows mild overconfidence in the 0.5–0.8 confidence range, which is common in cross-entropy-trained classifiers. Label smoothing (ε=0.1) partially corrects this. The clear separation between mean confidence on correct (89.26%) vs incorrect (67.19%) predictions confirms the confidence score is a reliable signal for flagging uncertain predictions in production.
-
-### Error Analysis
-
-The dominant failure mode is **cat/dog confusion**:
-- 70 cats (7.0%) were misclassified as dogs
-- 50 dogs (5.0%) were misclassified as cats
-
-Inspection of the top-20 most-confident mistakes reveals these are genuinely ambiguous 32×32 images — unusual poses, heavy occlusion, or atypical lighting — where even a human might hesitate. Vehicle classes (automobile 98.2%, truck 97.1%, ship 96.6%) and rigid-structure classes (horse 97.1%) achieve the highest accuracy, benefiting from their distinctive shapes and low inter-class visual overlap.
-
-### Augmentation Ablation
-
-| Configuration | Val Accuracy |
-|---------------|-------------|
-| No augmentation | ~82% |
-| + RandomCrop + HFlip | ~87% |
-| + ColorJitter | ~89% |
-| + RandomErasing | ~91% |
-| **Full pipeline (this work)** | **95.06%** |
-
 ---
 
 ## Reproducibility
 
-All random number generators are seeded in `src/utils.py`:
-
-```python
-random.seed(42)
-numpy.random.seed(42)
-torch.manual_seed(42)
-torch.cuda.manual_seed_all(42)
-torch.backends.cudnn.deterministic = True
-```
-
-To reproduce the exact reported numbers:
-
 ```bash
+# Exact reproduction of reported results
 python src/train.py --seed 42 --epochs 100 --batch-size 128 --lr 0.1
 python src/evaluate.py --checkpoint checkpoints/best_model.pth
 ```
 
-All hyperparameters used during training are stored inside each checkpoint file and logged to `results/training_history.json`.
+All random seeds (Python, NumPy, PyTorch CPU, PyTorch CUDA) are pinned in `src/utils.py`. Every hyperparameter used during training is stored inside the checkpoint file and logged to `results/training_history.json`.
 
-> **Note:** Minor variation (≤ 0.3%) may occur across different GPU architectures due to non-deterministic floating-point reduction order in CUDA kernels.
+> Minor variation (≤ 0.3%) may occur across different GPU architectures due to non-deterministic floating-point operations in CUDA.
 
 ---
 
@@ -526,11 +512,9 @@ All hyperparameters used during training are stored inside each checkpoint file 
 | Vision | torchvision | ≥ 0.15 |
 | Numerical Computing | NumPy | ≥ 1.24 |
 | ML Metrics | scikit-learn | ≥ 1.3 |
-| Visualisation | Matplotlib, Seaborn | ≥ 3.7, ≥ 0.12 |
+| Visualisation | Matplotlib, Seaborn | ≥ 3.7 |
 | Web Application | Gradio | ≥ 4.0 |
 | Image I/O | Pillow | ≥ 9.5 |
-| Data Analysis | Pandas | ≥ 2.0 |
-| Progress | tqdm | ≥ 4.65 |
 | Hardware | NVIDIA RTX 5070 | CUDA 13.3 |
 
 ---
@@ -552,8 +536,7 @@ Deep Learning · Computer Vision · PyTorch
 
 ## License
 
-This project is released under the **MIT License**.
-See [`LICENSE`](LICENSE) for the full text.
+This project is released under the **MIT License**. See [`LICENSE`](LICENSE) for the full text.
 
 ---
 

@@ -45,7 +45,7 @@ def get_dataloaders(
     data_dir="./data",
     batch_size=128,
     val_split=0.1,
-    num_workers=2,
+    num_workers=0, #making num_workers=0 to avoid issues on Windows since i have faced similar issues before while using jupyter notebook 
     augment=True,
     seed=42,
 ):

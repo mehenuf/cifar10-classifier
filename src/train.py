@@ -14,7 +14,7 @@ import time
 
 import torch
 import torch.nn as nn
-from torch.cuda.amp import GradScaler, autocast
+
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -86,7 +86,7 @@ def train_one_epoch(model, loader, criterion, optimizer, scaler, device):
         optimizer.zero_grad(set_to_none=True)   # faster than zero_grad()
 
         # Mixed precision forward pass
-        with autocast():
+        with torch.amp.autocast("cuda"):
             logits = model(images)
             loss   = criterion(logits, labels)
 
@@ -125,7 +125,7 @@ def validate(model, loader, criterion, device):
         images = images.to(device, non_blocking=True)
         labels = labels.to(device, non_blocking=True)
 
-        with autocast():
+        with torch.amp.autocast("cuda"):
             logits = model(images)
             loss   = criterion(logits, labels)
 
@@ -158,7 +158,7 @@ def main():
     model = build_model(num_classes=10, dropout=args.dropout).to(device)
 
     # ── Mixed precision scaler (RTX 5070 optimised) ───────────────────────────
-    scaler = GradScaler(enabled=device.type == "cuda")
+    scaler = torch.amp.GradScaler("cuda", enabled=device.type == "cuda")
 
     # ── Loss ──────────────────────────────────────────────────────────────────
     criterion = nn.CrossEntropyLoss(

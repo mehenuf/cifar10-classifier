@@ -14,14 +14,14 @@ import time
 
 import torch
 import torch.nn as nn
-
+import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.data_utils import get_dataloaders
 from src.model      import build_model
 from src.utilities      import (
-    set_seed, get_device,
+    FocalLoss, set_seed, get_device,
     accuracy, top5_accuracy,
     save_checkpoint, save_results,
     AverageMeter,
@@ -61,36 +61,34 @@ def log_gpu_memory():
 
 # ── Training pass ─────────────────────────────────────────────────────────────
 
-def train_one_epoch(model, loader, criterion, optimizer, scaler, device):
-    """
-    One full pass over the training set.
-
-    Uses:
-      - non_blocking GPU transfers for faster CPU→GPU data movement
-      - Mixed precision (AMP) for 2-3x faster training on RTX GPUs
-      - Gradient clipping for training stability
-
-    Returns:
-        (avg_loss, avg_top1_acc, avg_top5_acc)
-    """
+def train_one_epoch(model, loader, criterion, optimizer, scaler, device,
+                    cutmix_prob=0.5):
+    """Training pass — applies CutMix on 50% of batches."""
+    from src.data_utils import cutmix_batch, cutmix_criterion
     model.train()
-    loss_m  = AverageMeter()
-    top1_m  = AverageMeter()
-    top5_m  = AverageMeter()
+    loss_m = AverageMeter()
+    top1_m = AverageMeter()
+    top5_m = AverageMeter()
 
     for images, labels in loader:
-        # Async GPU transfer
         images = images.to(device, non_blocking=True)
         labels = labels.to(device, non_blocking=True)
+        optimizer.zero_grad(set_to_none=True)
 
-        optimizer.zero_grad(set_to_none=True)   # faster than zero_grad()
+        # Apply CutMix with probability cutmix_prob
+        use_cutmix = np.random.rand() < cutmix_prob
+        if use_cutmix:
+            images, labels_a, labels_b, lam = cutmix_batch(images, labels)
+            labels_a = labels_a.to(device)
+            labels_b = labels_b.to(device)
 
-        # Mixed precision forward pass
         with torch.amp.autocast("cuda"):
             logits = model(images)
-            loss   = criterion(logits, labels)
+            if use_cutmix:
+                loss = cutmix_criterion(criterion, logits, labels_a, labels_b, lam)
+            else:
+                loss = criterion(logits, labels)
 
-        # Scaled backward + gradient clip
         scaler.scale(loss).backward()
         scaler.unscale_(optimizer)
         nn.utils.clip_grad_norm_(model.parameters(), max_norm=5.0)
@@ -103,7 +101,6 @@ def train_one_epoch(model, loader, criterion, optimizer, scaler, device):
         top5_m.update(top5_accuracy(logits, labels), bs)
 
     return loss_m.avg, top1_m.avg, top5_m.avg
-
 
 # ── Validation pass ───────────────────────────────────────────────────────────
 
@@ -161,9 +158,8 @@ def main():
     scaler = torch.amp.GradScaler("cuda", enabled=device.type == "cuda")
 
     # ── Loss ──────────────────────────────────────────────────────────────────
-    criterion = nn.CrossEntropyLoss(
-        label_smoothing=args.label_smoothing
-    ).to(device)
+    from src.utilities import FocalLoss
+    criterion = FocalLoss(gamma=2.0, label_smoothing=args.label_smoothing).to(device)
 
     # ── Optimiser: SGD + Nesterov momentum ────────────────────────────────────
     optimizer = torch.optim.SGD(

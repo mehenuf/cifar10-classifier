@@ -4,6 +4,8 @@ import random
 import time
 import numpy as np
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 from sklearn.metrics import (
     classification_report,
     confusion_matrix,
@@ -285,3 +287,24 @@ class AverageMeter:
         self.sum   += val * n
         self.count += n
         self.avg    = self.sum / self.count
+
+
+class FocalLoss(nn.Module):
+   
+    def __init__(self, gamma: float = 2.0, label_smoothing: float = 0.1):
+        super().__init__()
+        self.gamma           = gamma
+        self.label_smoothing = label_smoothing
+
+    def forward(self, logits: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+        # Standard CE with label smoothing
+        ce_loss = F.cross_entropy(
+            logits, targets,
+            label_smoothing=self.label_smoothing,
+            reduction='none',
+        )
+        # p_t = probability assigned to the correct class
+        pt      = torch.exp(-ce_loss)
+        # Focal weight: (1 - pt)^gamma downweights easy examples
+        focal_w = (1 - pt) ** self.gamma
+        return (focal_w * ce_loss).mean()

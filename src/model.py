@@ -23,19 +23,37 @@ class ConvBnGelu(nn.Module):
         return self.net(x)
 
 
-class ResidualBlock(nn.Module):
-    """
-    Residual block with optional projection shortcut.
-    When in_ch != out_ch or stride > 1, a 1x1 conv aligns dimensions.
-    """
+class SEBlock(nn.Module): #learns to re-weight feature channels. Forces to focus on the discriminative channels of each class. Used to fix wrong prediction for visually similar classes like cat and dog, automobile and truck, etc.
 
-    def __init__(self, in_ch, out_ch, stride=1):
+    def __init__(self, channels: int, reduction: int = 16):
+        super().__init__()
+        self.pool = nn.AdaptiveAvgPool2d(1)
+        self.fc   = nn.Sequential(
+            nn.Linear(channels, channels // reduction, bias=False),
+            nn.ReLU(),
+            nn.Linear(channels // reduction, channels, bias=False),
+            nn.Sigmoid(),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        b, c, _, _ = x.shape
+        w = self.pool(x).view(b, c)
+        w = self.fc(w).view(b, c, 1, 1)
+        return x * w
+
+
+class ResidualBlock(nn.Module):
+    
+    def __init__(self, in_ch: int, out_ch: int, stride: int = 1,
+                 se_reduction: int = 16):
         super().__init__()
         self.conv1 = ConvBnGelu(in_ch, out_ch, stride=stride)
         self.conv2 = nn.Sequential(
             nn.Conv2d(out_ch, out_ch, 3, padding=1, bias=False),
             nn.BatchNorm2d(out_ch),
         )
+        self.se = SEBlock(out_ch, reduction=se_reduction)
+
         self.shortcut = nn.Sequential()
         if stride != 1 or in_ch != out_ch:
             self.shortcut = nn.Sequential(
@@ -43,11 +61,11 @@ class ResidualBlock(nn.Module):
                 nn.BatchNorm2d(out_ch),
             )
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = self.conv1(x)
         out = self.conv2(out)
+        out = self.se(out)              
         return F.gelu(out + self.shortcut(x))
-
 
 class CIFAR10Net(nn.Module):
     """

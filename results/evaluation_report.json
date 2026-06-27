@@ -1,177 +1,177 @@
 {
-  "top1_accuracy": 0.9481,
-  "top1_accuracy_pct": 94.81,
-  "top5_accuracy": 0.9957,
-  "top5_accuracy_pct": 99.57,
+  "top1_accuracy": 0.9548,
+  "top1_accuracy_pct": 95.48,
+  "top5_accuracy": 0.9983,
+  "top5_accuracy_pct": 99.83,
   "per_class": {
     "airplane": {
-      "precision": 0.95,
-      "recall": 0.951,
-      "f1_score": 0.9505,
+      "precision": 0.9617,
+      "recall": 0.953,
+      "f1_score": 0.9573,
       "support": 1000
     },
     "automobile": {
-      "precision": 0.9761,
-      "recall": 0.982,
-      "f1_score": 0.9791,
+      "precision": 0.9655,
+      "recall": 0.98,
+      "f1_score": 0.9727,
       "support": 1000
     },
     "bird": {
-      "precision": 0.9295,
-      "recall": 0.923,
-      "f1_score": 0.9262,
+      "precision": 0.9489,
+      "recall": 0.947,
+      "f1_score": 0.9479,
       "support": 1000
     },
     "cat": {
-      "precision": 0.8977,
-      "recall": 0.869,
-      "f1_score": 0.8831,
+      "precision": 0.9145,
+      "recall": 0.898,
+      "f1_score": 0.9062,
       "support": 1000
     },
     "deer": {
-      "precision": 0.9471,
-      "recall": 0.966,
-      "f1_score": 0.9564,
+      "precision": 0.9506,
+      "recall": 0.963,
+      "f1_score": 0.9568,
       "support": 1000
     },
     "dog": {
-      "precision": 0.9029,
-      "recall": 0.921,
-      "f1_score": 0.9119,
+      "precision": 0.919,
+      "recall": 0.93,
+      "f1_score": 0.9245,
       "support": 1000
     },
     "frog": {
-      "precision": 0.962,
-      "recall": 0.961,
-      "f1_score": 0.9615,
+      "precision": 0.9711,
+      "recall": 0.973,
+      "f1_score": 0.972,
       "support": 1000
     },
     "horse": {
-      "precision": 0.9798,
-      "recall": 0.971,
-      "f1_score": 0.9754,
+      "precision": 0.9759,
+      "recall": 0.972,
+      "f1_score": 0.9739,
       "support": 1000
     },
     "ship": {
-      "precision": 0.9679,
-      "recall": 0.966,
-      "f1_score": 0.967,
+      "precision": 0.9635,
+      "recall": 0.978,
+      "f1_score": 0.9707,
       "support": 1000
     },
     "truck": {
-      "precision": 0.9671,
-      "recall": 0.971,
-      "f1_score": 0.9691,
+      "precision": 0.9775,
+      "recall": 0.954,
+      "f1_score": 0.9656,
       "support": 1000
     }
   },
-  "macro_precision": 0.948,
-  "macro_recall": 0.9481,
-  "macro_f1": 0.948,
-  "weighted_precision": 0.948,
-  "weighted_recall": 0.9481,
-  "weighted_f1": 0.948,
-  "matthews_corrcoef": 0.9423,
-  "cohen_kappa": 0.9423,
+  "macro_precision": 0.9548,
+  "macro_recall": 0.9548,
+  "macro_f1": 0.9548,
+  "weighted_precision": 0.9548,
+  "weighted_recall": 0.9548,
+  "weighted_f1": 0.9548,
+  "matthews_corrcoef": 0.9498,
+  "cohen_kappa": 0.9498,
   "per_class_accuracy": {
-    "airplane": 0.951,
-    "automobile": 0.982,
-    "bird": 0.923,
-    "cat": 0.869,
-    "deer": 0.966,
-    "dog": 0.921,
-    "frog": 0.961,
-    "horse": 0.971,
-    "ship": 0.966,
-    "truck": 0.971
+    "airplane": 0.953,
+    "automobile": 0.98,
+    "bird": 0.947,
+    "cat": 0.898,
+    "deer": 0.963,
+    "dog": 0.93,
+    "frog": 0.973,
+    "horse": 0.972,
+    "ship": 0.978,
+    "truck": 0.954
   },
-  "min_class_accuracy": 0.869,
-  "max_class_accuracy": 0.982,
-  "mean_confidence": 0.8813,
-  "mean_correct_confidence": 0.8926,
-  "mean_wrong_confidence": 0.6719,
-  "ece": 0.0697,
+  "min_class_accuracy": 0.898,
+  "max_class_accuracy": 0.98,
+  "mean_confidence": 0.7915,
+  "mean_correct_confidence": 0.8022,
+  "mean_wrong_confidence": 0.5698,
+  "ece": 0.1633,
   "classification_report": {
     "airplane": {
-      "precision": 0.9500499500499501,
-      "recall": 0.951,
-      "f1-score": 0.9505247376311844,
+      "precision": 0.9616548940464178,
+      "recall": 0.953,
+      "f1-score": 0.957307885484681,
       "support": 1000.0
     },
     "automobile": {
-      "precision": 0.9761431411530815,
-      "recall": 0.982,
-      "f1-score": 0.9790628115653041,
+      "precision": 0.9655172413793104,
+      "recall": 0.98,
+      "f1-score": 0.9727047146401985,
       "support": 1000.0
     },
     "bird": {
-      "precision": 0.9295065458207452,
-      "recall": 0.923,
-      "f1-score": 0.9262418464626192,
+      "precision": 0.9488977955911824,
+      "recall": 0.947,
+      "f1-score": 0.9479479479479479,
       "support": 1000.0
     },
     "cat": {
-      "precision": 0.8977272727272727,
-      "recall": 0.869,
-      "f1-score": 0.883130081300813,
+      "precision": 0.9144602851323829,
+      "recall": 0.898,
+      "f1-score": 0.9061553985872856,
       "support": 1000.0
     },
     "deer": {
-      "precision": 0.9470588235294117,
-      "recall": 0.966,
-      "f1-score": 0.9564356435643564,
+      "precision": 0.9506416584402764,
+      "recall": 0.963,
+      "f1-score": 0.9567809239940388,
       "support": 1000.0
     },
     "dog": {
-      "precision": 0.9029411764705882,
-      "recall": 0.921,
-      "f1-score": 0.9118811881188119,
+      "precision": 0.9189723320158103,
+      "recall": 0.93,
+      "f1-score": 0.9244532803180915,
       "support": 1000.0
     },
     "frog": {
-      "precision": 0.9619619619619619,
-      "recall": 0.961,
-      "f1-score": 0.961480740370185,
+      "precision": 0.9710578842315369,
+      "recall": 0.973,
+      "f1-score": 0.972027972027972,
       "support": 1000.0
     },
     "horse": {
-      "precision": 0.9798183652875883,
-      "recall": 0.971,
-      "f1-score": 0.9753892516323456,
+      "precision": 0.9759036144578314,
+      "recall": 0.972,
+      "f1-score": 0.9739478957915831,
       "support": 1000.0
     },
     "ship": {
-      "precision": 0.9679358717434869,
-      "recall": 0.966,
-      "f1-score": 0.9669669669669669,
+      "precision": 0.9635467980295567,
+      "recall": 0.978,
+      "f1-score": 0.9707196029776675,
       "support": 1000.0
     },
     "truck": {
-      "precision": 0.9671314741035857,
-      "recall": 0.971,
-      "f1-score": 0.969061876247505,
+      "precision": 0.9774590163934426,
+      "recall": 0.954,
+      "f1-score": 0.9655870445344129,
       "support": 1000.0
     },
-    "accuracy": 0.9481,
+    "accuracy": 0.9548,
     "macro avg": {
-      "precision": 0.9480274582847672,
-      "recall": 0.9480999999999999,
-      "f1-score": 0.9480175143860091,
+      "precision": 0.9548111519717748,
+      "recall": 0.9548,
+      "f1-score": 0.9547632666303878,
       "support": 10000.0
     },
     "weighted avg": {
-      "precision": 0.9480274582847673,
-      "recall": 0.9481,
-      "f1-score": 0.9480175143860091,
+      "precision": 0.9548111519717748,
+      "recall": 0.9548,
+      "f1-score": 0.954763266630388,
       "support": 10000.0
     }
   },
   "throughput": {
-    "images_per_second": 13670.6,
-    "ms_per_image": 0.0731,
+    "images_per_second": 13206.3,
+    "ms_per_image": 0.0757,
     "batch_size": 512
   },
   "checkpoint": "./checkpoints/best_model.pth",
-  "checkpoint_epoch": 95,
-  "best_val_acc": 0.9506
+  "checkpoint_epoch": 189,
+  "best_val_acc": 0.9590000004768372
 }

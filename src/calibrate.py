@@ -35,15 +35,17 @@ class TemperatureScaler(nn.Module):
         self.to(device)
         self.model.eval()
 
-        # Collect all logits and labels
+        # Collect all logits and labels on CPU first
         all_logits, all_labels = [], []
         with torch.no_grad():
             for imgs, lbls in val_loader:
                 imgs = imgs.to(device)
                 all_logits.append(self.model(imgs).cpu())
                 all_labels.append(lbls)
-        all_logits = torch.cat(all_logits)
-        all_labels = torch.cat(all_labels)
+
+        # Move to same device as temperature parameter
+        all_logits = torch.cat(all_logits).to(device)
+        all_labels = torch.cat(all_labels).to(device)
 
         # Optimise temperature
         optimizer = torch.optim.LBFGS([self.temperature], lr=0.01, max_iter=100)
@@ -60,6 +62,43 @@ class TemperatureScaler(nn.Module):
         T = self.temperature.item()
         print(f"[calibrate] Optimal temperature T = {T:.4f}")
         return T
+
+
+def calibrate(self, val_loader, device: torch.device) -> float:
+    """
+    Find the optimal T by minimising NLL on the validation set.
+    Returns the learned temperature value.
+    """
+    self.to(device)
+    self.model.eval()
+
+    # Collect all logits and labels on CPU first
+    all_logits, all_labels = [], []
+    with torch.no_grad():
+        for imgs, lbls in val_loader:
+            imgs = imgs.to(device)
+            all_logits.append(self.model(imgs).cpu())
+            all_labels.append(lbls)
+
+    # Move to same device as temperature parameter
+    all_logits = torch.cat(all_logits).to(device)
+    all_labels = torch.cat(all_labels).to(device)
+
+    # Optimise temperature
+    optimizer = torch.optim.LBFGS([self.temperature], lr=0.01, max_iter=100)
+    nll = nn.CrossEntropyLoss()
+
+    def eval_step():
+        optimizer.zero_grad()
+        scaled = all_logits / self.temperature
+        loss   = nll(scaled, all_labels)
+        loss.backward()
+        return loss
+
+    optimizer.step(eval_step)
+    T = self.temperature.item()
+    print(f"[calibrate] Optimal temperature T = {T:.4f}")
+    return T
 
 
 def compute_ece(logits, labels, n_bins=15):
